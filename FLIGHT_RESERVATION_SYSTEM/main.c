@@ -13,6 +13,13 @@ struct Flight {
     float price;
 };
 
+struct Reservation {
+    int reservation_id;
+    int flight_id;
+    char passenger_name[50];
+    int num_seats;
+};
+
 // FUNCTION DECLARATIONS
 int mainMenu();
 void adminMenu();
@@ -302,6 +309,225 @@ void viewFlights(){
 } 
 
 
-void bookTicket(){} 
-void cancelTicket(){}
-void viewReservations(){} 
+
+// BOOKING TICKET 
+void bookTicket() {
+    struct Flight flights[100]; 
+    int flightCount = 0;
+    FILE *fp = fopen("Flights.txt", "r");
+    if (fp == NULL) {
+        printf("\nNo flights are available!\n");
+        return;
+    }
+
+    while (fscanf(fp, "%d,%[^,],%[^,],%[^,],%[^,],%d,%d,%f\n",
+                  &flights[flightCount].flight_id, flights[flightCount].source,
+                  flights[flightCount].destination, flights[flightCount].date,
+                  flights[flightCount].time, &flights[flightCount].total_seats,
+                  &flights[flightCount].available_seats, &flights[flightCount].price) == 8) {
+        flightCount++;
+    }
+    fclose(fp);
+
+    if (flightCount == 0) {
+        printf("\nNo flight records found.\n");
+        return; 
+    }
+
+    int flightID, seatsToBook;
+    printf("\nEnter Flight ID to book: ");
+    scanf("%d", &flightID);
+
+    int found = 0;
+    int flightIndex = -1; 
+
+    for (int i = 0; i < flightCount; i++) {
+        if (flights[i].flight_id == flightID) {
+            found = 1;
+            flightIndex = i; 
+            
+            printf("\nFlight found!\n");
+            printf("Source: %s, Destination: %s\n", flights[i].source, flights[i].destination);
+            printf("Available Seats: %d\n", flights[i].available_seats);
+            printf("Price per ticket: %.2f\n", flights[i].price);
+
+            printf("Enter number of seats to book: ");
+            scanf("%d", &seatsToBook);
+
+            if (seatsToBook > 0 && seatsToBook <= flights[i].available_seats) {
+            
+                flights[i].available_seats = flights[i].available_seats - seatsToBook;
+                
+                printf("\n================================\n");
+                printf("%d seat(s) booked successfully!\n", seatsToBook);
+                printf("Total Price: %.2f\n", seatsToBook * flights[i].price);
+                printf("Remaining Seats on Flight: %d\n", flights[i].available_seats);
+                printf("================================\n");
+
+                char pName[50];
+                printf("Enter Passenger Name for reservation: ");
+                scanf(" %49[^\n]", pName); 
+
+                int resID = flights[i].flight_id * 100 + flights[i].available_seats; 
+
+                FILE *resFile = fopen("Reservations.txt", "a");
+                if (resFile == NULL) {
+                    printf("Error saving reservation!\n");
+                } else {
+                    fprintf(resFile, "%d,%d,%s,%d\n", resID, flights[i].flight_id, pName, seatsToBook);
+                    fclose(resFile);
+                    
+                    printf("Reservation saved! Your Reservation ID is: %d\n", resID);
+                }
+
+            } 
+            else if (seatsToBook <= 0) {
+                printf("\nInvalid number of seats. Must be 1 or more.\n");
+            }
+            else {
+                printf("\nNot enough seats available! Only %d seats left.\n", flights[i].available_seats);
+            }
+            break; 
+        }
+    }
+
+    if (!found) {
+        printf("Flight ID %d not found!\n", flightID);
+        return; 
+    }
+
+    fp = fopen("Flights.txt", "w");
+    if (fp == NULL) {
+        printf("Error saving flight data!\n");
+        return;
+    }
+
+    for (int i = 0; i < flightCount; i++) {
+        fprintf(fp, "%d,%s,%s,%s,%s,%d,%d,%.2f\n",
+                flights[i].flight_id, flights[i].source, flights[i].destination,
+                flights[i].date, flights[i].time, flights[i].total_seats,
+                flights[i].available_seats, flights[i].price);
+    }
+    fclose(fp);
+}
+
+
+
+// CANCELLING TICKET
+void cancelTicket(){
+    struct Flight flights[100]; 
+    int flightCount = 0;
+    FILE *fp = fopen("Flights.txt", "r");
+    if (fp == NULL) {
+        printf("\nNo flights available!\n");
+        return;
+    }
+
+    while (fscanf(fp, "%d,%[^,],%[^,],%[^,],%[^,],%d,%d,%f\n",
+                  &flights[flightCount].flight_id, flights[flightCount].source,
+                  flights[flightCount].destination, flights[flightCount].date,
+                  flights[flightCount].time, &flights[flightCount].total_seats,
+                  &flights[flightCount].available_seats, &flights[flightCount].price) == 8) {
+        flightCount++;
+    }
+    fclose(fp);
+
+    if (flightCount == 0) {
+        printf("\nNo flight records found.\n");
+        return;
+    }
+
+    int flightID, seatsToCancel;
+    printf("\nEnter Flight ID to cancel: ");
+    scanf("%d", &flightID);
+
+    int found = 0;
+    for (int i = 0; i < flightCount; i++) {
+        if (flights[i].flight_id == flightID) {
+            found = 1;
+
+            printf("\nFlight found!\n");
+            printf("Source: %s, Destination: %s\n", flights[i].source, flights[i].destination);
+            printf("Total Seats: %d\n", flights[i].total_seats);
+            printf("Available Seats: %d\n", flights[i].available_seats);
+            printf("Booked Seats: %d\n", flights[i].total_seats - flights[i].available_seats);
+
+            printf("\nEnter number of seats to cancel: ");
+            scanf("%d", &seatsToCancel);
+
+            int bookedSeats = flights[i].total_seats - flights[i].available_seats;
+
+            if (seatsToCancel <= 0) {
+                printf("\nInvalid number. Must be 1 or more.\n");
+            }
+            else if (seatsToCancel > bookedSeats) {
+                printf("\nError! You cannot cancel %d seats.\n", seatsToCancel);
+                printf("Only %d seats are booked on this flight.\n", bookedSeats);
+            }
+            else {
+                flights[i].available_seats = flights[i].available_seats + seatsToCancel;
+                printf("\n================================\n");
+                printf("%d seat(s) canceled successfully!\n", seatsToCancel);
+                printf("New Available Seats: %d\n", flights[i].available_seats);
+                printf("================================\n");
+            }
+            break;
+        }
+    }
+
+    if (!found) {
+        printf("Flight ID %d not found!\n", flightID);
+        return;
+    }
+
+    fp = fopen("Flights.txt", "w");
+    if (fp == NULL) {
+        printf("Error saving data!\n");
+        return;
+    }
+
+    for (int i = 0; i < flightCount; i++) {
+        fprintf(fp, "%d,%s,%s,%s,%s,%d,%d,%.2f\n",
+                flights[i].flight_id, flights[i].source, flights[i].destination,
+                flights[i].date, flights[i].time, flights[i].total_seats,
+                flights[i].available_seats, flights[i].price);
+    }
+    fclose(fp);
+}
+
+
+
+// VIEW RESERVATIONS
+void viewReservations() {
+    FILE *fp = fopen("Reservations.txt", "r"); 
+    if (fp == NULL) {
+        printf("\nNo reservations found!\n");
+        return;
+    }
+
+    struct Reservation res; 
+    int count = 0;
+
+    printf("\n------ MY RESERVATIONS ------\n");
+
+    while (fscanf(fp, "%d,%d,%[^,],%d\n", 
+                  &res.reservation_id, 
+                  &res.flight_id, 
+                  res.passenger_name, 
+                  &res.num_seats) == 4) {
+                      
+        printf("\nReservation ID: %d\n", res.reservation_id);
+        printf("Flight ID: %d\n", res.flight_id);
+        printf("Passenger Name: %s\n", res.passenger_name);
+        printf("Seats Booked: %d\n", res.num_seats);
+        printf("--------------------------\n");
+        count++;
+    }
+
+    fclose(fp);
+    
+    if (count == 0) {
+
+        printf("\nNo reservations found!\n");
+    }
+}
