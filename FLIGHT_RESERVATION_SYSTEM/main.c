@@ -1,6 +1,17 @@
+/*
+ * Project: Flight Reservation System
+ * Language: C
+ * Description: A console-based application to manage flight bookings,
+ * cancellations, and administrative tasks using File I/O.
+ */
+
 #include <stdio.h>
 
-// STRUCTS
+// ==========================================
+// DATA STRUCTURES
+// ==========================================
+
+// Structure to store Flight details
 struct Flight {
     int flight_id;
     char source[30];
@@ -8,18 +19,21 @@ struct Flight {
     char date[15];
     char time[10];
     int total_seats;
-    int available_seats;
+    int available_seats; // Track real-time availability
     float price;
 };
 
+// Structure to store Reservation details linked to a Flight
 struct Reservation {
-    int reservation_id;
-    int flight_id;
+    int reservation_id;      // Unique ID for the booking
+    int flight_id;           // Foreign key linking to Flight struct
     char passenger_name[50];
-    int num_seats;
+    int num_seats;           // Number of seats booked in this reservation
 };
 
-// FUNCTION DECLARATIONS
+// ==========================================
+// FUNCTION PROTOTYPES
+// ==========================================
 int mainMenu();
 void adminMenu();
 void userMenu();
@@ -32,13 +46,18 @@ void viewReservations();
 int adminLogin();
 int userLogin();
 
+// ==========================================
 // MAIN FUNCTION
+// ==========================================
 int main() {
+    // Launch the application main menu
     mainMenu();
     return 0;
 }
 
-// ADMIN LOGIN 
+// ==========================================
+// ADMIN LOGIN
+// ==========================================
 int adminLogin() {
     int user, pass, choice;
 
@@ -52,6 +71,7 @@ int adminLogin() {
     printf("                    Enter Admin Password (number): ");
     scanf("%d", &pass);
 
+    // Toggle password visibility simulation
     printf("                    Show password? (1 = Yes, 2 = No): ");
     scanf("%d", &choice);
 
@@ -60,6 +80,7 @@ int adminLogin() {
     else
         printf("                    You entered password: ******\n");
 
+    // Hardcoded credentials for Admin (User: 1, Pass: 1234)
     if (user == 1 && pass == 1234) {
         printf("                    Login Successful!\n");
         return 1;
@@ -69,7 +90,9 @@ int adminLogin() {
     }
 }
 
-// USER LOGIN 
+// ==========================================
+// USER LOGIN
+// ==========================================
 int userLogin() {
     int user, pass, choice;
 
@@ -91,6 +114,7 @@ int userLogin() {
     else
         printf("                    You entered password: ******\n");
 
+    // Hardcoded credentials for User (User: 2, Pass: 5678)
     if (user == 2 && pass == 5678) {
         printf("                    User Login Successful!\n");
         return 1;
@@ -100,7 +124,9 @@ int userLogin() {
     }
 }
 
-// MAIN MENU
+// ==========================================
+// MAIN MENU 
+// ==========================================
 int mainMenu() {
     int choice;
 
@@ -118,18 +144,20 @@ int mainMenu() {
 
         switch (choice) {
             case 1:
+                // Only open admin menu if login returns true
                 if (adminLogin())
                     adminMenu();
                 break;
 
             case 2:
+                // Only open user menu if login returns true
                 if (userLogin())
                     userMenu();
                 break;
 
             case 3:
                 printf("                    GOODBYE!\n");
-                return 0;
+                return 0; // Terminate program
 
             default:
                 printf("                    Invalid choice! Try again.\n");
@@ -137,7 +165,9 @@ int mainMenu() {
     }
 }
 
+// ==========================================
 // ADMIN MENU
+// ==========================================
 void adminMenu() {
     int choice;
 
@@ -158,13 +188,15 @@ void adminMenu() {
             case 1: addFlight(); break;
             case 2: deleteFlight(); break;
             case 3: viewFlights(); break;
-            case 4: return;
+            case 4: return; // Return to Main Menu
             default: printf("                    Invalid choice!\n");
         }
     }
 }
 
+// ==========================================
 // USER MENU
+// ==========================================
 void userMenu() {
     int choice;
 
@@ -187,15 +219,24 @@ void userMenu() {
             case 2: bookTicket(); break;
             case 3: cancelTicket(); break;
             case 4: viewReservations(); break;
-            case 5: return;
+            case 5: return; // Return to Main Menu
             default: printf("                    Invalid choice!\n");
         }
     }
 }
 
+
+//                           ==========================================
+//                                     CORE FLIGHT OPERATIONS
+//                           ==========================================
+
+
+// ==========================================
 // ADD FLIGHT
+// ==========================================
 void addFlight() {
     struct Flight f;
+    // Open in 'append' mode to preserve existing data
     FILE* fp = fopen("Flights.txt", "a");
 
     if (!fp) {
@@ -207,6 +248,7 @@ void addFlight() {
     printf("                    |      ADD FLIGHT      |\n");
     printf("                    '----------------------'\n\n");
 
+    // Gather flight details
     printf("                    Enter Flight ID: ");
     scanf("%d", &f.flight_id);
     printf("                    Enter Source: ");
@@ -222,22 +264,27 @@ void addFlight() {
     printf("                    Enter Ticket Price: ");
     scanf("%f", &f.price);
 
+    // Initialize available seats to total capacity
     f.available_seats = f.total_seats;
 
+    // Write to file in CSV format
     fprintf(fp, "%d,%s,%s,%s,%s,%d,%d,%.2f\n",
             f.flight_id, f.source, f.destination, f.date,
             f.time, f.total_seats, f.available_seats, f.price);
 
-    fclose(fp);
+    fclose(fp); // Always close file to save changes
 
     printf("                    Flight Added Successfully!\n");
 }
 
+// ==========================================
 // DELETE FLIGHT
+// ==========================================
 void deleteFlight() {
-    struct Flight flights[100];
+    struct Flight flights[100]; // Buffer to hold file data
     int count = 0, deleteID, found = 0;
 
+    // Step 1: Read all data into memory
     FILE* fp = fopen("Flights.txt", "r");
     if (!fp) {
         printf("                    No flights found!\n");
@@ -261,12 +308,14 @@ void deleteFlight() {
     printf("                    Enter Flight ID to delete: ");
     scanf("%d", &deleteID);
 
+    // Step 2: Search for ID and remove from array
     for (int i = 0; i < count; i++) {
         if (flights[i].flight_id == deleteID) {
             found = 1;
+            // Shift subsequent elements left to overwrite the deleted flight
             for (int j = i; j < count - 1; j++)
                 flights[j] = flights[j + 1];
-            count--;
+            count--; // Reduce total count
             break;
         }
     }
@@ -276,6 +325,7 @@ void deleteFlight() {
         return;
     }
 
+    // Step 3: Rewrite the entire file with updated array
     fp = fopen("Flights.txt", "w");
     for (int i = 0; i < count; i++) {
         fprintf(fp, "%d,%s,%s,%s,%s,%d,%d,%.2f\n",
@@ -289,7 +339,9 @@ void deleteFlight() {
     printf("                    Flight Deleted Successfully!\n");
 }
 
+// ==========================================
 // VIEW FLIGHTS
+// ==========================================
 void viewFlights() {
     struct Flight flight;
     FILE* fp = fopen("Flights.txt", "r");
@@ -305,6 +357,7 @@ void viewFlights() {
     printf("                    |                       AVAILABLE FLIGHTS                       |\n");
     printf("                    '---------------------------------------------------------------'\n\n");
 
+    // Table Header using left alignment formatting
     printf("%-10s %-15s %-15s %-12s %-8s %-10s %-10s %-8s\n",
         "ID", "Source", "Destination", "Date", "Time",
         "Seats", "Available", "Price");
@@ -316,6 +369,7 @@ void viewFlights() {
             flight.date, flight.time, &flight.total_seats,
             &flight.available_seats, &flight.price) == 8)
     {
+        // Print row data formatted to match header
         printf("%-10d %-15s %-15s %-12s %-8s %-10d %-10d %-8.2f\n",
                flight.flight_id, flight.source, flight.destination,
                flight.date, flight.time, flight.total_seats,
@@ -329,11 +383,14 @@ void viewFlights() {
     fclose(fp);
 }
 
-// BOOK TICKET
+// ==========================================
+// BOOK TICKETS
+// ==========================================
 void bookTicket() {
     struct Flight flights[100];
     int count = 0;
 
+    // Load flights to memory
     FILE* fp = fopen("Flights.txt", "r");
     if (!fp) {
         printf("                    No flights available!\n");
@@ -358,6 +415,7 @@ void bookTicket() {
     printf("                    Enter Flight ID to book: ");
     scanf("%d", &id);
 
+    // Find the requested flight index
     int found = -1;
     for (int i = 0; i < count; i++)
         if (flights[i].flight_id == id)
@@ -372,23 +430,28 @@ void bookTicket() {
     printf("                    How many seats?: ");
     scanf("%d", &seats);
 
+    // Validate seat availability
     if (seats <= 0 || seats > flights[found].available_seats) {
         printf("                    Invalid seat number!\n");
         return;
     }
 
+    // Deduct seats from inventory
     flights[found].available_seats -= seats;
 
     char name[50];
     printf("                    Enter Passenger Name: ");
-    scanf(" %[^\n]", name);
+    scanf(" %[^\n]", name); // Read string with spaces
 
+    // Generate pseudo-unique Reservation ID
     int resID = id * 100 + seats;
 
+    // 1. Save Reservation Record
     FILE* rf = fopen("Reservations.txt", "a");
     fprintf(rf, "%d,%d,%s,%d\n", resID, id, name, seats);
     fclose(rf);
 
+    // 2. Update Flight Inventory File
     fp = fopen("Flights.txt", "w");
     for (int i = 0; i < count; i++) {
         fprintf(fp, "%d,%s,%s,%s,%s,%d,%d,%.2f\n",
@@ -402,7 +465,9 @@ void bookTicket() {
     printf("                    Booking Successful! Reservation ID = %d\n", resID);
 }
 
-// CANCEL TICKET
+// ==========================================
+// CANCEL TICKETS
+// ==========================================
 void cancelTicket() {
     struct Reservation reservations[100];
     struct Flight flights[100];
@@ -410,6 +475,7 @@ void cancelTicket() {
     int cancelResID, foundResIndex = -1, foundFlightIndex = -1;
     int flightID_to_update, seats_to_cancel;
 
+    // --- STEP 1: LOAD RESERVATIONS ---
     FILE* fp = fopen("Reservations.txt", "r");
     if (!fp) {
         printf("                    No reservations found!\n");
@@ -433,7 +499,7 @@ void cancelTicket() {
     printf("                    Enter Reservation ID: ");
     scanf("%d", &cancelResID);
 
-
+    // Locate the reservation in the array
     for (int i = 0; i < resCount; i++) {
         if (reservations[i].reservation_id == cancelResID) {
             foundResIndex = i;
@@ -450,7 +516,7 @@ void cancelTicket() {
     printf("                    How many seats do you want to cancel? ");
     scanf("%d", &seats_to_cancel);
 
-
+    // Validation
     if (seats_to_cancel <= 0) {
         printf("                    Invalid number of seats!\n");
         return;
@@ -460,23 +526,24 @@ void cancelTicket() {
         return;
     }
 
-
+    // Store Flight ID to restore inventory later
     flightID_to_update = reservations[foundResIndex].flight_id;
 
-    
+    // --- STEP 2: UPDATE RESERVATION ARRAY ---
     if (seats_to_cancel == reservations[foundResIndex].num_seats) {
-
+        // Full Cancellation: Remove entry entirely
         for (int i = foundResIndex; i < resCount - 1; i++) {
             reservations[i] = reservations[i + 1];
         }
         resCount--;
         printf("                    All reservations cancelled.\n");
     } else {
-
+        // Partial Cancellation: Deduct seat count
         reservations[foundResIndex].num_seats -= seats_to_cancel;
         printf("                    Reservations cancelled. You still have %d seats.\n", reservations[foundResIndex].num_seats);
     }
 
+    // Save updated reservations to file
     fp = fopen("Reservations.txt", "w");
     for (int i = 0; i < resCount; i++) {
         fprintf(fp, "%d,%d,%s,%d\n",
@@ -487,13 +554,14 @@ void cancelTicket() {
     }
     fclose(fp);
 
-
+    // --- STEP 3: UPDATE FLIGHT INVENTORY ---
     fp = fopen("Flights.txt", "r");
     if (!fp) {
         printf("                    Error updating flight inventory!\n");
         return;
     }
 
+    // Load flights to find the one matching the reservation
     while (fscanf(fp, "%d,%[^,],%[^,],%[^,],%[^,],%d,%d,%f\n",
         &flights[flightCount].flight_id, flights[flightCount].source,
         flights[flightCount].destination, flights[flightCount].date,
@@ -504,6 +572,7 @@ void cancelTicket() {
     }
     fclose(fp);
 
+    // Find the flight linked to the cancelled reservation
     for (int i = 0; i < flightCount; i++) {
         if (flights[i].flight_id == flightID_to_update) {
             foundFlightIndex = i;
@@ -512,9 +581,10 @@ void cancelTicket() {
     }
 
     if (foundFlightIndex != -1) {
-        
+        // Refund the cancelled seats back to available inventory
         flights[foundFlightIndex].available_seats += seats_to_cancel;
 
+        // Save updated flights to file
         fp = fopen("Flights.txt", "w");
         for (int i = 0; i < flightCount; i++) {
             fprintf(fp, "%d,%s,%s,%s,%s,%d,%d,%.2f\n",
@@ -529,7 +599,9 @@ void cancelTicket() {
     printf("                    Process Completed Successfully!\n");
 }
 
-// VIEW RESERVATIONS
+// ==========================================
+// VIEW ALL RESERVATIONS
+// ==========================================
 void viewReservations() {
     struct Reservation res;
     FILE* fp = fopen("Reservations.txt", "r");
@@ -543,6 +615,7 @@ void viewReservations() {
     printf("                    |      MY RESERVATIONS       |\n");
     printf("                    '----------------------------'\n\n");
 
+    // Read and print each reservation
     while (fscanf(fp, "%d,%d,%[^,],%d\n",
         &res.reservation_id, &res.flight_id,
         res.passenger_name, &res.num_seats) == 4)
