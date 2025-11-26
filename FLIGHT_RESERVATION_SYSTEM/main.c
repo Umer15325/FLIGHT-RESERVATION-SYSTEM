@@ -27,6 +27,8 @@ struct Reservation {
 // ==========================================
 // FUNCTION PROTOTYPES
 // ==========================================
+int adminLogin();
+int userLogin();
 int mainMenu();
 void adminMenu();
 void userMenu();
@@ -36,8 +38,7 @@ void viewFlights();
 void bookTicket();
 void cancelTicket();
 void viewReservations();
-int adminLogin();
-int userLogin();
+
 
 // ==========================================
 // MAIN FUNCTION
@@ -58,7 +59,7 @@ int adminLogin() {
     printf("                    |       LOGIN BOX      |\n");
     printf("                    '----------------------'\n\n");
 
-    printf("                    Enter Admin Username (number): ");
+    printf("                    Enter Admin ID (number): ");
     scanf("%d", &user);
 
     printf("                    Enter Admin Password (number): ");
@@ -93,7 +94,7 @@ int userLogin() {
     printf("                    |       LOGIN BOX      |\n");
     printf("                    '----------------------'\n\n");
 
-    printf("                    Enter User Username (number): ");
+    printf("                    Enter User ID (number): ");
     scanf("%d", &user);
 
     printf("                    Enter User Password (number): ");
