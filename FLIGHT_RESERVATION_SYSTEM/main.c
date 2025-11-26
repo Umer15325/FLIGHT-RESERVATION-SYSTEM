@@ -1,10 +1,3 @@
-/*
- * Project: Flight Reservation System
- * Language: C
- * Description: A console-based application to manage flight bookings,
- * cancellations, and administrative tasks using File I/O.
- */
-
 #include <stdio.h>
 
 // ==========================================
